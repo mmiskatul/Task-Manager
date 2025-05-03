@@ -23,12 +23,10 @@ export async function registerUser(req, res) {
     return res.status(400).json({ success: false, massage: "Inavalid Email" });
   }
   if (password.length < 8) {
-    return res
-      .status(400)
-      .json({
-        success: false,
-        massage: "Password must Be atleast 8 characters ",
-      });
+    return res.status(400).json({
+      success: false,
+      massage: "Password must Be atleast 8 characters ",
+    });
   }
   try {
     if (await User.findOne({ email })) {
@@ -40,13 +38,11 @@ export async function registerUser(req, res) {
     const user = await User.create({ name, email, password: hashed });
     const token = createToken(user._id);
 
-    res
-      .status(201)
-      .json({
-        success: true,
-        token,
-        user: { id: user._id, name: user.name, email: user.email },
-      });
+    res.status(201).json({
+      success: true,
+      token,
+      user: { id: user._id, name: user.name, email: user.email },
+    });
   } catch (err) {
     console.log(err);
     response.status(500).json({ success: false, massage: "Server error" });
@@ -96,6 +92,32 @@ export async function getCurrentUser(req, res) {
         .json({ success: false, massage: "User Not found" });
     }
     res.json({ success: true, user });
+  } catch (err) {
+    console.log(err);
+    response.status(500).json({ success: false, massage: "Server error" });
+  }
+}
+
+// UPDATE USER PROFILE
+
+export async function updateProfile(req, res) {
+  const { name, email } = req.body;
+  if (!name || !email || !validator.isEmail(email)) {
+    return res
+      .status(400)
+      .json({ success: false, massage: "valid  name  & Email required" });
+  }
+  try {
+    const exits = await User.findOne({ email, _id: { $ne: req.user.id } });
+    if(exits){
+        return res.status(409).json({success:false,massage:"Email already used by another account"});
+    }
+    const user = await User.findByIdAndUpdate(
+        req.user.id,
+        {name ,email},
+        {new :true , runValidator :true ,select : "name email"}
+    );
+    req.json({success:true ,user});
   } catch (err) {
     console.log(err);
     response.status(500).json({ success: false, massage: "Server error" });
