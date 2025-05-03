@@ -1,8 +1,7 @@
 import mongoose from "mongoose";
 import User from "../Model/userModel.js";
 import validator from "validator";
-import bcrypt, { hash } from "bcrypt";
-import { response } from "express";
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your_JWt_secret_here";
@@ -20,19 +19,19 @@ export async function registerUser(req, res) {
       .json({ success: false, massage: "All fields are required" });
   }
   if (!validator.isEmail(email)) {
-    return res.status(400).json({ success: false, massage: "Inavalid Email" });
+    return res.status(400).json({ success: false, massage: "Invalid Email" });
   }
   if (password.length < 8) {
     return res.status(400).json({
       success: false,
-      massage: "Password must Be atleast 8 characters ",
+      massage: "Password must be at least 8 characters",
     });
   }
   try {
     if (await User.findOne({ email })) {
       return res
         .status(409)
-        .json({ success: false, massage: "User Already exits" });
+        .json({ success: false, massage: "User Already exists" });
     }
     const hashed = await bcrypt.hash(password, 10);
     const user = await User.create({ name, email, password: hashed });
@@ -45,7 +44,7 @@ export async function registerUser(req, res) {
     });
   } catch (err) {
     console.log(err);
-    response.status(500).json({ success: false, massage: "Server error" });
+    res.status(500).json({ success: false, massage: "Server error" });
   }
 }
 
@@ -55,7 +54,7 @@ export async function loginUser(req, res) {
   if (!email || !password) {
     return res
       .status(400)
-      .json({ success: false, massage: "Email &  password required" });
+      .json({ success: false, massage: "Email & password required" });
   }
   try {
     const user = await User.findOne({ email });
@@ -78,14 +77,14 @@ export async function loginUser(req, res) {
     });
   } catch (err) {
     console.log(err);
-    response.status(500).json({ success: false, massage: "Server error" });
+    res.status(500).json({ success: false, massage: "Server error" });
   }
 }
 
 // GET CURRENT USER
 export async function getCurrentUser(req, res) {
   try {
-    const user = await User.findById(req.user.id).select("name email ");
+    const user = await User.findById(req.user.id).select("name email");
     if (!user) {
       return res
         .status(400)
@@ -94,66 +93,64 @@ export async function getCurrentUser(req, res) {
     res.json({ success: true, user });
   } catch (err) {
     console.log(err);
-    response.status(500).json({ success: false, massage: "Server error" });
+    res.status(500).json({ success: false, massage: "Server error" });
   }
 }
 
 // UPDATE USER PROFILE
-
 export async function updateProfile(req, res) {
   const { name, email } = req.body;
   if (!name || !email || !validator.isEmail(email)) {
     return res
       .status(400)
-      .json({ success: false, massage: "valid  name  & Email required" });
+      .json({ success: false, massage: "Valid name & Email required" });
   }
   try {
-    const exits = await User.findOne({ email, _id: { $ne: req.user.id } });
-    if (exits) {
-      return res
-        .status(409)
-        .json({
-          success: false,
-          massage: "Email already used by another account",
-        });
+    const exists = await User.findOne({ email, _id: { $ne: req.user.id } });
+    if (exists) {
+      return res.status(409).json({
+        success: false,
+        massage: "Email already used by another account",
+      });
     }
     const user = await User.findByIdAndUpdate(
       req.user.id,
       { name, email },
-      { new: true, runValidator: true, select: "name email" }
+      { new: true, runValidators: true, select: "name email" }
     );
-    req.json({ success: true, user });
+    res.json({ success: true, user });
   } catch (err) {
     console.log(err);
-    response.status(500).json({ success: false, massage: "Server error" });
+    res.status(500).json({ success: false, massage: "Server error" });
   }
 }
 
-s;
 // CHANGE PASSWORD FUNCTION
 export async function updatePassword(req, res) {
   const { currentPassword, newPassword } = req.body;
   if (!currentPassword || !newPassword || newPassword.length < 8) {
     return res
       .status(400)
-      .json({ success: false, massage: "Invalid Password or to short" });
+      .json({ success: false, massage: "Invalid Password or too short" });
   }
   try {
     const user = await User.findById(req.user.id).select("password");
-    if(!user){
-        return res.status(404).json({success :false ,massage:"User Not Found"});
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, massage: "User Not Found" });
     }
-    const match=await bcrypt.compare(currentPassword,user.password);
-    if(!match){
-        return res.status(401).json({success:false,massage:"Current Password incorrect"});
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) {
+      return res
+        .status(401)
+        .json({ success: false, massage: "Current Password incorrect" });
     }
-    user.password =await bcrypt.hash(newPassword,10);
+    user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
-    res.json({success :true ,massage :"Password Changed"});
-    
+    res.json({ success: true, massage: "Password Changed" });
   } catch (err) {
     console.log(err);
-    response.status(500).json({ success: false, massage: "Server error" });
-
+    res.status(500).json({ success: false, massage: "Server error" });
   }
 }
