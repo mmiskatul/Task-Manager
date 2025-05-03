@@ -20,3 +20,14 @@ export const createTask = async (req, res) => {
     res.status(400).json({ success: false, massage: err.massage });
   }
 };
+
+
+// GET ALL TASK FOR LOGGED IN USER
+export const getTask=async  (req,res)=> {
+    try{
+        const tasks=await Task.Find({owner:req.user.id}).sort({createdAt: -1});
+        res.json({success:true,tasks});
+    }catch(err){
+        res.status(500).json({ success: false, massage: err.massage });
+    }
+}
