@@ -109,17 +109,51 @@ export async function updateProfile(req, res) {
   }
   try {
     const exits = await User.findOne({ email, _id: { $ne: req.user.id } });
-    if(exits){
-        return res.status(409).json({success:false,massage:"Email already used by another account"});
+    if (exits) {
+      return res
+        .status(409)
+        .json({
+          success: false,
+          massage: "Email already used by another account",
+        });
     }
     const user = await User.findByIdAndUpdate(
-        req.user.id,
-        {name ,email},
-        {new :true , runValidator :true ,select : "name email"}
+      req.user.id,
+      { name, email },
+      { new: true, runValidator: true, select: "name email" }
     );
-    req.json({success:true ,user});
+    req.json({ success: true, user });
   } catch (err) {
     console.log(err);
     response.status(500).json({ success: false, massage: "Server error" });
+  }
+}
+
+s;
+// CHANGE PASSWORD FUNCTION
+export async function updatePassword(req, res) {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword || newPassword.length < 8) {
+    return res
+      .status(400)
+      .json({ success: false, massage: "Invalid Password or to short" });
+  }
+  try {
+    const user = await User.findById(req.user.id).select("password");
+    if(!user){
+        return res.status(404).json({success :false ,massage:"User Not Found"});
+    }
+    const match=await bcrypt.compare(currentPassword,user.password);
+    if(!match){
+        return res.status(401).json({success:false,massage:"Current Password incorrect"});
+    }
+    user.password =await bcrypt.hash(newPassword,10);
+    await user.save();
+    res.json({success :true ,massage :"Password Changed"});
+    
+  } catch (err) {
+    console.log(err);
+    response.status(500).json({ success: false, massage: "Server error" });
+
   }
 }
