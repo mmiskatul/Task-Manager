@@ -31,3 +31,16 @@ export const getTask=async  (req,res)=> {
         res.status(500).json({ success: false, massage: err.massage });
     }
 }
+
+
+// GET SINGLE TASK BY ID(MUST BELONG TO PARTICULAR USER)
+export const getTaskById=async (req,res)=>{
+    try{
+        const task =await Task.findOne({_id :req.params.id,owner:req.user.id});
+        if(!task)return res.status(404).json({success:false,massage:"Task is NOt Found"});
+        res.json({success:true,task});
+
+    }catch(err){
+        res.status(500).json({ success: false, massage: err.massage });
+    }
+}
