@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import User from '../Model/userModel.js'
 import validator from  'validator'
-import bcrypt from 'bcrypt'
+import bcrypt, { hash } from 'bcrypt'
 import { response } from "express";
 import jwt from 'jsonwebtoken'
 
@@ -42,4 +42,27 @@ export async  function registerUser(req,res){
 
 
 
-// 
+// LOGIN FUNCTION
+export async function loginUser(req,res) {
+    const {email,password} =req.body;
+    if( !email || !password){
+        return res.status(400).json({success: false,massage :"Email &  password required"});
+    }
+    try{
+        const user=await User.findOne({email});
+        if(!user){
+            return res.status(401).json({success:false,massage:"Invalid Credentials"});
+        }
+        const  match =await bcrypt.compare(password,user.password);
+        if(!match){
+            return res.status(401).json({success:false,massage:"Invalid Credentials"});
+        }
+        const token =createToken(user._id);
+        res.json({success:true,token ,user:{id: user._id,name :user.name,email:user.email}})
+       
+        
+    }catch(err ){
+        console.log(err);
+        response.status(500).json({success :false,massage :"Server error"});
+    }
+}
