@@ -72,3 +72,17 @@ export const updateTask = async (req, res) => {
     res.status(500).json({ success: false, massage: err.massage });
   }
 };
+
+
+// DELETE TASK
+export const deleteTask= async(req,res)=>{
+    try{
+        const  deleted = await Task.findByIdAndDelete ({_id:req.params.id,owner: req.user.id});
+        if(!deleted)return res.status(404).json({success:false,massage:"Task is NoT Found or not Yours"});
+        res.json({success:true ,massage: "Task Deleted Successfully"});
+
+
+    }catch(err){
+    res.status(500).json({ success: false, massage: err.massage });
+    }
+}
